@@ -259,15 +259,19 @@
 .octane-video-window__tile--pip {
     flex: 0 0 auto;
     width: min(180px, 18vw);
-    height: auto;
+    max-height: min(320px, 40vh);
     border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: 6px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+    background: #000;
 }
 
+/* aspecto vem do proprio stream (aspectRatio inline via autoAspect);
+   o max-height acima clampa cameras verticais em telas baixas */
 .octane-video-window__tile--pip .octane-video-window__video {
     height: auto;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: unset;
 }
 
 :fullscreen .octane-video-window__controls {

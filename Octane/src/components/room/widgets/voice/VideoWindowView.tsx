@@ -87,10 +87,11 @@ const isVideoVisible = (video: VoiceVideo, videoVisible: Set<string> | null): bo
 };
 
 /** Renders one video MediaStreamTrack in a <video> element. */
-const VideoTile: FC<{ video: VoiceVideo; className?: string; showLabel?: boolean; onMetadata?: (element: HTMLVideoElement) => void }> = ({ video, className, showLabel = true, onMetadata }) =>
+const VideoTile: FC<{ video: VoiceVideo; className?: string; showLabel?: boolean; onMetadata?: (element: HTMLVideoElement) => void; autoAspect?: boolean }> = ({ video, className, showLabel = true, onMetadata, autoAspect }) =>
 {
     const videoRef = useRef<HTMLVideoElement>(null);
     const metadataRef = useRef(onMetadata);
+    const [ aspect, setAspect ] = useState<number>(0);
 
     metadataRef.current = onMetadata;
 
@@ -113,14 +114,22 @@ const VideoTile: FC<{ video: VoiceVideo; className?: string; showLabel?: boolean
     }, [ video.track ]);
 
     return (
-        <div className={ 'octane-video-window__tile' + (className ? ' ' + className : '') }>
+        <div
+            className={ 'octane-video-window__tile' + (className ? ' ' + className : '') }
+            style={ autoAspect && aspect > 0 ? { aspectRatio: String(aspect) } : undefined }>
             <video
                 ref={ videoRef }
                 className="octane-video-window__video"
                 autoPlay
                 muted={ video.local }
                 playsInline
-                onLoadedMetadata={ () => metadataRef.current?.(videoRef.current as HTMLVideoElement) } />
+                onLoadedMetadata={ () =>
+                {
+                    const element = videoRef.current as HTMLVideoElement;
+
+                    if(element.videoWidth > 0 && element.videoHeight > 0) setAspect(element.videoWidth / element.videoHeight);
+                    metadataRef.current?.(element);
+                } } />
             { showLabel &&
                 <span className="octane-video-window__label">
                     { displayName(video) } · { video.source === 'camera' ? 'Câmera' : 'Tela' }
@@ -291,7 +300,7 @@ export const ScreenWindowView: FC<{}> = () =>
                                 { cameras.length > 0 &&
                                     <div className="octane-video-window__pip">
                                         { cameras.map((camera) =>
-                                            <VideoTile key={ 'pip-' + camera.id } video={ camera } className="octane-video-window__tile--pip" showLabel={ false } />) }
+                                            <VideoTile key={ 'pip-' + camera.id } video={ camera } className="octane-video-window__tile--pip" showLabel={ false } autoAspect />) }
                                     </div> }
 
                                 <div className="octane-video-window__controls">
