@@ -482,12 +482,29 @@
     top: 6px;
     right: 8px;
     z-index: 65;
-    padding: 3px 10px;
-    border-radius: 6px;
-    background: rgba(0, 0, 0, 0.55);
+    padding: 4px 12px;
+    border-radius: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    outline: 1px solid rgba(0, 0, 0, 0.6);
+    background:
+        repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.06) 0 6px, transparent 6px 12px),
+        linear-gradient(180deg, #4a4f8f 0%, #2c3060 55%, #1c1f40 100%);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.22);
     color: #fff;
     font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
     pointer-events: auto;
+    cursor: pointer;
+}
+
+.hud-mode-button:hover {
+    filter: brightness(1.18);
+}
+
+.hud-mode-button:active {
+    transform: translateY(1px);
 }
 
 /* no modo completo a coluna direita (carteira/notificacoes) ocupa o canto: botao desloca pra esquerda dela */
@@ -512,6 +529,9 @@ body[data-hud-mode='simple'] .tb-open-shell-right .tb-slot:not(.tb-slot-messenge
     display: none;
 }
 
-body[data-hud-mode='simple'] .octane-right-side {
+body[data-hud-mode='simple'] .octane-right-side,
+/* barra de amigos / Staff Chat (portal para #toolbar-friend-bar-container-desktop) */
+body[data-hud-mode='simple'] #toolbar-friend-bar-container-desktop,
+body[data-hud-mode='clean'] #toolbar-friend-bar-container-desktop {
     display: none;
 }

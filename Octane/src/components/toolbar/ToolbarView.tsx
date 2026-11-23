@@ -439,8 +439,8 @@ export const ToolbarView: FC<{ isInRoom: boolean }> = props =>
                         { !leftCollapsed && (<>
                         <motion.div variants={ itemVariants } className="tb-slot">
                             { isInRoom
-                                ? <ToolbarItemView icon="habbo" onClick={ () => VisitDesktop() } className="tb-icon" />
-                                : <ToolbarItemView icon="house" onClick={ () => CreateLinkEvent('navigator/goto/home') } className="tb-icon" /> }
+                                ? <ToolbarItemView icon="rooms" onClick={ () => CreateLinkEvent('navigator/toggle') } className="tb-icon" />
+                                : <ToolbarItemView icon="rooms" onClick={ () => CreateLinkEvent('navigator/goto/home') } className="tb-icon" /> }
                         </motion.div>
                         <motion.div variants={ itemVariants } className="tb-slot">
                             <ToolbarNavigatorItemView />
@@ -612,8 +612,8 @@ export const ToolbarView: FC<{ isInRoom: boolean }> = props =>
                         className="tb-bar-scroll flex h-full min-w-0 flex-1 items-center gap-2 overflow-x-auto overflow-y-visible px-1">
                         <motion.div variants={ itemVariants }>
                             { isInRoom
-                                ? <ToolbarItemView icon="habbo" onClick={ () => VisitDesktop() } className="tb-icon" />
-                                : <ToolbarItemView icon="house" onClick={ () => CreateLinkEvent('navigator/goto/home') } className="tb-icon" /> }
+                                ? <ToolbarItemView icon="rooms" onClick={ () => CreateLinkEvent('navigator/toggle') } className="tb-icon" />
+                                : <ToolbarItemView icon="rooms" onClick={ () => CreateLinkEvent('navigator/goto/home') } className="tb-icon" /> }
                         </motion.div>
                         <motion.div variants={ itemVariants }>
                             <ToolbarNavigatorItemView />

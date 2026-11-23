@@ -2,13 +2,13 @@ import { FC, useEffect, useState } from 'react';
 
 export type HudMode = 'full' | 'simple' | 'clean';
 
-const STORAGE_KEY = 'hud.mode';
+const STORAGE_KEY = 'hud.mode.v2'; // v2: padrao = simples
 
 export const readHudMode = (): HudMode =>
 {
     const value = localStorage.getItem(STORAGE_KEY);
 
-    return value === 'simple' || value === 'clean' ? value : 'full';
+    return value === 'clean' || value === 'full' ? value : 'simple';
 };
 
 export const writeHudMode = (mode: HudMode) =>

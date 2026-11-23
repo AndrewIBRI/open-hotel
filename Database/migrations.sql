@@ -39,9 +39,7 @@ UPDATE `emulator_settings` SET `value` = '50'   WHERE `key` = 'new_user_diamonds
 -- Login direto na sala do escritorio: todo mundo que logar entra na "ScalaClub"
 -- (mecanismo nativo: retro.style.homeroom=1 + hotel.home.room=<id> no SecureLoginEvent.roomToEnter).
 -- Resolve o id da sala pelo nome; idempotente.
-UPDATE `emulator_settings`
-  SET `value` = (SELECT `id` FROM (SELECT `id` FROM `rooms` WHERE `caption` = 'ScalaClub' LIMIT 1) t)
-  WHERE `key` = 'hotel.home.room' AND EXISTS (SELECT 1 FROM `rooms` WHERE `caption` = 'ScalaClub');
+UPDATE `emulator_settings` SET `value` = '58' WHERE `key` = 'hotel.home.room';
 UPDATE `emulator_settings` SET `value` = '1' WHERE `key` = 'retro.style.homeroom';
--- usuarios existentes com home room propria passam a ter a ScalaClub como casa tambem
-UPDATE `users` u JOIN `rooms` r ON r.`caption` = 'ScalaClub' SET u.`home_room` = r.`id`;
+-- usuarios existentes passam a ter a ScalaClub (id 58) como casa
+UPDATE `users` SET `home_room` = 58;
