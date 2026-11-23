@@ -59,6 +59,7 @@ import { RoomView } from './room/RoomView';
 import { RoomQueueWidgetView } from './room/widgets/room-queue/RoomQueueWidgetView';
 import { SoundboardView } from './soundboard/SoundboardView';
 import { TalentView } from './talent/TalentView';
+import { HudModeButtonView } from './toolbar/HudModeButtonView';
 import { ToolbarView } from './toolbar/ToolbarView';
 import { WidgetErrorBoundary } from '../common/error-boundary/WidgetErrorBoundary';
 import { TranslationBootstrap } from './translation/TranslationBootstrap';
@@ -204,6 +205,7 @@ export const MainView: FC<{}> = (props) =>
                     )}
                 </AnimatePresence>
                 <WidgetErrorBoundary name="ToolbarView"><ToolbarView isInRoom={!landingViewVisible} /></WidgetErrorBoundary>
+                { !landingViewVisible && <HudModeButtonView /> }
                 <WidgetErrorBoundary name="TranslationBootstrap">
                     <TranslationBootstrap />
                 </WidgetErrorBoundary>

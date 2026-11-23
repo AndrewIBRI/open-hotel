@@ -473,3 +473,45 @@
 .octane-toolbar-hint {
     animation: octane-toolbar-hint 800ms ease-in-out 5;
 }
+
+/* ===================== MODOS DE HUD (botao no canto superior direito) ===================== */
+/* body[data-hud-mode]: full (padrao) / simple / clean  — ver HudModeButtonView.tsx */
+
+.hud-mode-button {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    z-index: 65;
+    padding: 3px 10px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 12px;
+    pointer-events: auto;
+}
+
+/* no modo completo a coluna direita (carteira/notificacoes) ocupa o canto: botao desloca pra esquerda dela */
+body[data-hud-mode='full'] .hud-mode-button {
+    right: 240px;
+}
+
+/* --- limpo: sem toolbar, sem chat da sala, sem coluna direita; so o jogo + camera/mic --- */
+body[data-hud-mode='clean'] .tb-frame,
+body[data-hud-mode='clean'] .octane-toolbar-hobba,
+body[data-hud-mode='clean'] .tb-nav-clip,
+body[data-hud-mode='clean'] .octane-right-side {
+    display: none;
+}
+
+/* --- simples: so navegar (casa/navigator) + messenger + chat da sala; sem coluna direita --- */
+body[data-hud-mode='simple'] .tb-nav-clip:not([class*='right-0']) .tb-open-shell:not(.tb-open-shell-right) .tb-slot:not(:first-child) {
+    display: none;
+}
+
+body[data-hud-mode='simple'] .tb-open-shell-right .tb-slot:not(.tb-slot-messenger) {
+    display: none;
+}
+
+body[data-hud-mode='simple'] .octane-right-side {
+    display: none;
+}
