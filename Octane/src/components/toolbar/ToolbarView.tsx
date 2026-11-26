@@ -606,7 +606,8 @@ export const ToolbarView: FC<{ isInRoom: boolean }> = props =>
                     animate={ visibilityVariant }
                     variants={ mobileNavVariants }
                     transition={ NAV_TRANSITION }
-                    className={ `absolute left-1/2 bottom-0 z-[71] flex w-[95vw] -translate-x-1/2 items-center overflow-visible ${ mobileOnlyClasses } ${ isInRoom ? `octane-toolbar-mobile-hobba${ toolbarOpaqueClass } px-[6px] py-[4px] mb-[3px]` : '' }` }>
+                    className={ `absolute left-1/2 bottom-0 z-[71] flex w-[95vw] -translate-x-1/2 items-center overflow-visible ${ mobileOnlyClasses } ${ isInRoom ? `octane-toolbar-mobile-hobba${ toolbarOpaqueClass } px-[6px] py-[4px] mb-[3px]` : '' }` }
+                    data-hud-hide="clean">
                     <motion.div
                         variants={ containerVariants }
                         className="tb-bar-scroll flex h-full min-w-0 flex-1 items-center gap-2 overflow-x-auto overflow-y-visible px-1">
@@ -619,14 +620,14 @@ export const ToolbarView: FC<{ isInRoom: boolean }> = props =>
                             <ToolbarNavigatorItemView />
                         </motion.div>
                         { GetConfigurationValue('game.center.enabled') &&
-                            <motion.div variants={ itemVariants }>
+                            <motion.div variants={ itemVariants } data-hud-hide="simple">
                                 <ToolbarItemView icon="game" onClick={ () => CreateLinkEvent('games/toggle') } className="tb-icon" />
                             </motion.div> }
-                        <motion.div variants={ itemVariants } className="relative">
+                        <motion.div variants={ itemVariants } className="relative" data-hud-hide="simple">
                             <ToolbarItemView icon="catalog" onClick={ () => CreateLinkEvent('catalog/toggle/normal') } className="tb-icon" />
                             <ToolbarNewAdditionsLabel />
                         </motion.div>
-                        <motion.div variants={ itemVariants } className="relative tb-slot tb-slot-tall tb-slot-memenu shrink-0">
+                        <motion.div variants={ itemVariants } className="relative tb-slot tb-slot-tall tb-slot-memenu shrink-0" data-hud-hide="simple">
                             <img src={ memenuBgImg } alt="" className="tb-memenu-bg" />
                             <AnimatePresence>
                                 { isMeExpanded &&
@@ -653,18 +654,19 @@ export const ToolbarView: FC<{ isInRoom: boolean }> = props =>
                                 <LayoutItemCountView count={ meMenuCount } className="octane-toolbar-count pointer-events-none absolute -right-1 -top-1 z-10" /> }
                         </motion.div>
                         { isInRoom &&
-                            <motion.div variants={ itemVariants } className="relative">
+                            <motion.div variants={ itemVariants } className="relative" data-hud-hide="simple">
                                 <ToolbarItemView icon="inventory" onClick={ () => CreateLinkEvent('inventory/toggle') } className="tb-icon" />
                                 { (getFullCount > 0) &&
                                     <LayoutItemCountView count={ getFullCount } className="octane-toolbar-count absolute -right-1 top-0" /> }
                             </motion.div> }
                         { fortuneWheelEnabled &&
-                            <motion.div variants={ itemVariants }>
+                            <motion.div variants={ itemVariants } data-hud-hide="simple">
                                 <ToolbarItemView icon="fortune-wheel" onClick={ () => CreateLinkEvent('fortune-wheel/toggle') } className="tb-icon" />
                             </motion.div> }
                     </motion.div>
                     <motion.div
                         variants={ containerVariants }
+                        data-hud-hide="simple"
                         className="tb-bar-scroll flex h-full items-center gap-2 overflow-x-auto overflow-y-visible px-1">
                         { (isInRoom && showToolbarButton) &&
                             <motion.div variants={ itemVariants }>
@@ -706,9 +708,10 @@ export const ToolbarView: FC<{ isInRoom: boolean }> = props =>
                     variants={ mobileNavVariants }
                     transition={ NAV_TRANSITION }
                     style={ staffStackBottom != null ? { top: 'auto', bottom: `${ staffStackBottom }px` } : undefined }
-                    className={ `absolute left-1 z-[71] flex flex-col items-center gap-[2px] bg-[#55534e] px-[2px] py-[4px] ${ staffStackBottom == null ? 'top-1/2 -translate-y-1/2' : '' } ${ sideStackClasses }` }>
+                    className={ `absolute left-1 z-[71] flex flex-col items-center gap-[2px] bg-[#55534e] px-[2px] py-[4px] ${ staffStackBottom == null ? 'top-1/2 -translate-y-1/2' : '' } ${ sideStackClasses }` }
+                    data-hud-hide="clean">
                     { touchLayout && buildersClubEnabled &&
-                        <motion.div variants={ itemVariants }>
+                        <motion.div variants={ itemVariants } data-hud-hide="simple">
                             <ToolbarItemView icon="buildersclub" onClick={ () => CreateLinkEvent('catalog/toggle/builder') } className="tb-icon" />
                         </motion.div> }
                     { isInRoom &&
@@ -716,13 +719,13 @@ export const ToolbarView: FC<{ isInRoom: boolean }> = props =>
                             <ToolbarItemView icon="camera" onClick={ () => CreateLinkEvent('camera/toggle') } className="tb-icon" />
                         </motion.div> }
                     { isMod &&
-                        <motion.div variants={ itemVariants } className="relative">
+                        <motion.div variants={ itemVariants } className="relative" data-hud-hide="simple">
                             <ToolbarItemView icon="modtools" onClick={ () => CreateLinkEvent('mod-tools/show') } className="tb-icon" />
                             { (openTicketsCount > 0) &&
                                 <LayoutItemCountView count={ openTicketsCount } className="octane-toolbar-count pointer-events-none absolute -right-1 -top-1 z-10" /> }
                         </motion.div> }
                     { (isHk && hkEnabled) &&
-                        <motion.div variants={ itemVariants }>
+                        <motion.div variants={ itemVariants } data-hud-hide="simple">
                             <ToolbarItemView icon="housekeeping" onClick={ () => CreateLinkEvent('housekeeping/toggle') } className="tb-icon" />
                         </motion.div> }
                     { /* Below the compact breakpoint the right rail's social icons
@@ -736,7 +739,7 @@ export const ToolbarView: FC<{ isInRoom: boolean }> = props =>
                                 <LayoutItemCountView count={ requests.length } className="octane-toolbar-count pointer-events-none absolute -right-1 -top-1 z-10" /> }
                         </motion.div> }
                     { socialInSideStack &&
-                        <motion.div variants={ itemVariants }>
+                        <motion.div variants={ itemVariants } data-hud-hide="simple">
                             <ToolbarItemView icon="friendsearch" onClick={ () => SendMessageComposer(new FindNewFriendsMessageComposer()) } className="tb-icon" />
                         </motion.div> }
                     { (socialInSideStack && mentionsEnabled) &&

@@ -535,3 +535,19 @@ body[data-hud-mode='simple'] #toolbar-friend-bar-container-desktop,
 body[data-hud-mode='clean'] #toolbar-friend-bar-container-desktop {
     display: none;
 }
+
+/* ===================== MODOS DE HUD — MOBILE ===================== */
+/* A barra mobile nao usa as classes desktop (tb-frame etc.); os elementos
+   mobile sao marcados com data-hud-hide="simple" / "simple clean" no JSX
+   (ver ToolbarView.tsx). ~' =' casa qualquer token da lista. */
+body[data-hud-mode='simple'] [data-hud-hide~='simple'],
+body[data-hud-mode='clean'] [data-hud-hide~='clean'] {
+    display: none !important;
+}
+
+/* no mobile nao existe a coluna direita: o botao fica sempre no canto */
+@media (max-width: 700px) {
+    body[data-hud-mode='full'] .hud-mode-button {
+        right: 8px;
+    }
+}
