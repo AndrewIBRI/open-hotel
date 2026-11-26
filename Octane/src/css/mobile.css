@@ -57,6 +57,8 @@
     /* ---------------------------------------------------------------
        Login: esconder camadas decorativas largas; form ja e responsivo
        (.login-stack: max-width calc(100vw - 32px) em LoginView.css).
+       Compactar card/inputs e evitar zoom automatico do iOS
+       (input com font-size < 16px faz o Safari dar zoom no foco).
        ---------------------------------------------------------------- */
     .login-sun,
     .login-drape,
@@ -64,6 +66,44 @@
     .login-right
     {
         display: none;
+    }
+
+    .login-stack
+    {
+        width: 264px;
+        gap: 10px;
+    }
+
+    .octane-login-card .card-title
+    {
+        min-height: 30px;
+        max-height: 30px;
+        font-size: 16px;
+        padding: 4px 34px;
+    }
+
+    .octane-login-card .card-body
+    {
+        gap: 6px;
+        padding: 8px;
+        font-size: 13px;
+    }
+
+    .octane-login-card .field input,
+    .octane-select-trigger.form-select
+    {
+        font-size: 16px;
+    }
+
+    .octane-login-card .ok-button
+    {
+        min-height: 40px;
+    }
+
+    .login-language-picker
+    {
+        transform: scale(0.85);
+        transform-origin: top right;
     }
 
     /* Canvas da sala: toque e pinca, sem zoom/scroll da pagina por cima. */
