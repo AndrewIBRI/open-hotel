@@ -108,13 +108,25 @@
 
     /* Frame do chat/barra inferior: o site centra com -translate-x-1/2
        (Tailwind v4 usa a propriedade `translate`), metade sai da tela
-       em viewport pequena. Alinhar a esquerda sem translate. */
+       em viewport pequena. Alinhar com as mesmas margens da toolbar. */
     .tb-frame
     {
-        left: 0;
-        right: auto;
+        left: 10px;
+        right: 10px;
+        width: auto;
         translate: none;
         transform: none;
+    }
+
+    /* Widget de voz (mic/cam/tela): por padrao fica sobre os icones
+       da coluna esquerda (camera/amigos/mentions). Descer para o espaco
+       entre a coluna e a barra de chat. */
+    .octane-voice-widget
+    {
+        top: auto !important;
+        bottom: 150px !important;
+        left: 8px !important;
+        max-width: calc(100vw - 16px);
     }
 
     /* Canvas da sala: toque e pinca, sem zoom/scroll da pagina por cima. */
