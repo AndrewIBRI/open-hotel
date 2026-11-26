@@ -60,15 +60,15 @@
        Compactar card/inputs e evitar zoom automatico do iOS
        (input com font-size < 16px faz o Safari dar zoom no foco).
        ---------------------------------------------------------------- */
-    .login-sun,
-    .login-drape,
-    .login-right-repeat,
-    .login-right
+    .octane-login-view .login-sun,
+    .octane-login-view .login-drape,
+    .octane-login-view .login-right-repeat,
+    .octane-login-view .login-right
     {
         display: none;
     }
 
-    .login-stack
+    .octane-login-view .login-stack
     {
         width: 264px;
         gap: 10px;
@@ -95,15 +95,26 @@
         font-size: 16px;
     }
 
-    .octane-login-card .ok-button
+    .octane-login-card button.ok-button
     {
         min-height: 40px;
     }
 
-    .login-language-picker
+    .octane-login-view .login-language-picker
     {
         transform: scale(0.85);
         transform-origin: top right;
+    }
+
+    /* Frame do chat/barra inferior: o site centra com -translate-x-1/2
+       (Tailwind v4 usa a propriedade `translate`), metade sai da tela
+       em viewport pequena. Alinhar a esquerda sem translate. */
+    .tb-frame
+    {
+        left: 0;
+        right: auto;
+        translate: none;
+        transform: none;
     }
 
     /* Canvas da sala: toque e pinca, sem zoom/scroll da pagina por cima. */
