@@ -129,6 +129,20 @@
         max-width: calc(100vw - 16px);
     }
 
+    /* Container invisivel das ferramentas da sala (colapsado) fica por
+       cima do widget de voz e intercepta os toques — mic/video nao
+       respondem no touch. Liberar o toque apenas para os botoes reais. */
+    .octane-room-tools-container.is-collapsed
+    {
+        pointer-events: none;
+    }
+
+    .octane-room-tools-container.is-collapsed button,
+    .octane-room-tools-container.is-collapsed .octane-icon
+    {
+        pointer-events: auto;
+    }
+
     /* Canvas da sala: toque e pinca, sem zoom/scroll da pagina por cima. */
     canvas
     {
