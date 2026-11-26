@@ -114,8 +114,8 @@
         left: 10px;
         right: 10px;
         width: auto;
-        translate: none;
-        transform: none;
+        translate: none !important;
+        transform: none !important;
     }
 
     /* Widget de voz (mic/cam/tela): por padrao fica sobre os icones
