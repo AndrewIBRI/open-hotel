@@ -1,0 +1,76 @@
+/* Mobile: larguras pequenas (<= 900px). Media query unica; desktop nunca afetado. */
+@media (max-width: 900px)
+{
+    html,
+    body
+    {
+        overflow: hidden;
+        overscroll-behavior: none;
+        touch-action: manipulation;
+    }
+
+    /* Alturas dinamicas (teclado do celular encolhe o viewport no iOS). */
+    #root,
+    .octane-app
+    {
+        height: 100dvh !important;
+    }
+
+    /* ---------------------------------------------------------------
+       Toolbar bottom dock: full-width, alvos de toque >= 44px.
+       ---------------------------------------------------------------- */
+    .tb-frame
+    {
+        left: 0;
+        right: 0;
+        width: 100%;
+        max-width: none;
+    }
+
+    .tb-frame .tb-slot
+    {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    /* ---------------------------------------------------------------
+       Modais / dialogs: cabem no viewport com scroll interno.
+       ---------------------------------------------------------------- */
+    .octane-card-view,
+    [class*='modal'],
+    [class*='dialog']
+    {
+        max-width: 96vw;
+        max-height: 90dvh;
+        overflow: auto;
+    }
+
+    /* ---------------------------------------------------------------
+       Janelas de video / camera (VoiceWidget.css: .octane-video-window--*).
+       ---------------------------------------------------------------- */
+    .octane-video-window
+    {
+        max-width: 48vw;
+        max-height: 40dvh;
+    }
+
+    /* ---------------------------------------------------------------
+       Login: esconder camadas decorativas largas; form ja e responsivo
+       (.login-stack: max-width calc(100vw - 32px) em LoginView.css).
+       ---------------------------------------------------------------- */
+    .login-sun,
+    .login-drape,
+    .login-right-repeat,
+    .login-right
+    {
+        display: none;
+    }
+
+    /* Canvas da sala: toque e pinca, sem zoom/scroll da pagina por cima. */
+    canvas
+    {
+        touch-action: none;
+    }
+
+    /* Feedback de toque na sala: ja criado pelo RoomView (.octane-room-touch-feedback). */
+}

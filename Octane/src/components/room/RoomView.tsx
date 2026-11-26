@@ -43,9 +43,31 @@ export const RoomView: FC<{}> = (props) => {
         let touchMoved = false;
         let lastTileTap: { x: number; y: number; time: number } = null;
 
+        // Pinca com 2 dedos = zoom da sala (mesmos eventos 'room-tools/zoom_in|out' do Ctrl + roda).
+        let pinchStartDistance = 0;
+        let lastPinchStep = 0;
+
+        const getPinchDistance = (event: TouchEvent): number =>
+        {
+            if (event.touches.length < 2) return 0;
+
+            const [ a, b ] = [ event.touches[0], event.touches[1] ];
+
+            return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+        };
+
         const isMobileTouch = () => window.matchMedia('(pointer: coarse), (hover: none)').matches;
 
         const onTouchStart = (event: TouchEvent) => {
+            const pinch = getPinchDistance(event);
+
+            if (pinch > 0)
+            {
+                pinchStartDistance = pinch;
+
+                return;
+            }
+
             const touch = event.touches[0];
 
             if (!touch || !isMobileTouch()) return;
@@ -56,6 +78,24 @@ export const RoomView: FC<{}> = (props) => {
         };
 
         const onTouchMove = (event: TouchEvent) => {
+            const pinch = getPinchDistance(event);
+
+            if (pinch > 0 && pinchStartDistance > 0)
+            {
+                const now = performance.now();
+                const ratio = pinch / pinchStartDistance;
+
+                // Passo unico de zoom por gesto: 12% maior/menor que a ultima medicao.
+                if (now - lastPinchStep > ROOM_WHEEL_STEP_MS && Math.abs(ratio - 1) > 0.12)
+                {
+                    lastPinchStep = now;
+                    CreateLinkEvent(ratio > 1 ? 'room-tools/zoom_in' : 'room-tools/zoom_out');
+                    pinchStartDistance = pinch;
+                }
+
+                return;
+            }
+
             const touch = event.touches[0];
 
             if (!touch || !isMobileTouch()) return;
@@ -64,6 +104,8 @@ export const RoomView: FC<{}> = (props) => {
         };
 
         const onTouchEnd = (event: TouchEvent) => {
+            if (event.touches.length < 2) pinchStartDistance = 0;
+
             const touch = event.changedTouches[0];
 
             if (!touch || touchMoved || !isMobileTouch()) return;
