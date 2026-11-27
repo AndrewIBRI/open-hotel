@@ -146,10 +146,12 @@
         pointer-events: auto;
     }
 
-    /* Icones de camera/amigos/mentions do toolbar: removidos no mobile
-       nos modos simple e clean; no HUD completo (full) fica tudo normal. */
-    body[data-hud-mode='simple'] .tb-open-shell-right .tb-slot,
-    body[data-hud-mode='clean'] .tb-open-shell-right .tb-slot
+    /* Coluna vertical de icones (buildersclub/camera/amigos/friendsearch/
+       mentions, container flex-col left-1 z-[71]) — o seletor anterior
+       (.tb-open-shell-right) nao pega esse container. Esconder em simple
+       e clean; no HUD completo (full) fica tudo normal. */
+    body[data-hud-mode='simple'] [class*='flex-col'][class*='left-1'],
+    body[data-hud-mode='clean'] [class*='flex-col'][class*='left-1']
     {
         display: none;
     }
