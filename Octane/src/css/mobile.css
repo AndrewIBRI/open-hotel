@@ -156,6 +156,28 @@
         display: none;
     }
 
+    /* Barra inferior (tb-bar-scroll): dois botoes icon-rooms identicos
+       ficam visiveis em simple/clean — esconder o segundo (full fica
+       normal, com os dois). */
+    body[data-hud-mode='simple'] .tb-bar-scroll > div:nth-child(2),
+    body[data-hud-mode='clean'] .tb-bar-scroll > div:nth-child(2)
+    {
+        display: none;
+    }
+
+    /* Chat dentro da barra inferior (simple e clean): desce de bottom-90
+       para dentro da barra (h46), logo a direita do icone que sobrou.
+       No full fica flutuando como antes. */
+    body[data-hud-mode='simple'] .tb-frame,
+    body[data-hud-mode='clean'] .tb-frame
+    {
+        bottom: 4px !important;
+        left: 70px !important;
+        right: 10px;
+        width: auto;
+        z-index: 72;
+    }
+
     /* Canvas da sala: toque e pinca, sem zoom/scroll da pagina por cima. */
     canvas
     {
