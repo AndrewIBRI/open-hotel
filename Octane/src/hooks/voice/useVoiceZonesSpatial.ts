@@ -26,6 +26,9 @@ interface UserTile
  */
 const lastKnownLocation = new Map<number, { x: number; y: number }>();
 
+/** Zona anterior do usuário local (para logar entrada/saída). */
+let previousZone = -2;
+
 /** Extrai o webID da identidade LiveKit (user-<id>). */
 const webIdOf = (identity: string): number =>
 {
@@ -119,6 +122,29 @@ const applySpatial = () =>
     }
 
     const myZone = zoneOf(state.zones, me.x, me.y);
+
+    // [Zonas] Log de debug: entrada/saída de zona + quem está em cada zona.
+    if(myZone !== previousZone)
+    {
+        const zoneName = (index: number): string => (index >= 0 ? state.zones[index]?.name ?? `#${index}` : 'FORA DE ZONA');
+        const inMyZone = users
+            .filter((user) => user.webID !== userId && zoneOf(state.zones, user.x, user.y) === myZone)
+            .map((user) => userDataManager.getUserDataByIndex(user.webID)?.name ?? `user-${user.webID}`);
+        const zoneCounts: Record<string, string[]> = {};
+
+        for(const user of users)
+        {
+            const key = zoneName(zoneOf(state.zones, user.x, user.y));
+
+            (zoneCounts[key] = zoneCounts[key] ?? []).push(user.webID === userId ? `${GetSessionDataManager().userName} (eu)` : userDataManager.getUserDataByIndex(user.webID)?.name ?? `user-${user.webID}`);
+        }
+
+        console.log(`[Zonas] ${previousZone === -2 ? 'Início' : 'Mudança de zona'}: agora em "${zoneName(myZone)}" (antes: ${zoneName(previousZone)})`);
+        console.log('[Zonas] Pessoas conectadas por zona:', JSON.stringify(zoneCounts), '| conectados no LiveKit:', remotes.map((r) => r.name || r.identity).join(', '));
+        console.log(`[Zonas] Na minha zona ("${zoneName(myZone)}"):`, inMyZone.length ? inMyZone.join(', ') : '(ninguém)');
+    }
+
+    previousZone = myZone;
 
     /**
      * Fator efetivo = o da zona ONDE EU ESTOU, se ela tiver fatores próprios;

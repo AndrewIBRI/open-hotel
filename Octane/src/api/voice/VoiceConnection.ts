@@ -303,11 +303,26 @@ class VoiceConnection
 
             const factor = this._spatialFactors.get(participant.identity) ?? SPATIAL_DEFAULT_FACTOR;
 
-            for(const source of [ Track.Source.Microphone, Track.Source.ScreenShareAudio ])
-            {
-                const track = participant.getTrackPublication(source)?.track as RemoteAudioTrack | undefined;
+            let appliedAny = false;
 
-                if(track && typeof track.setVolume === 'function') track.setVolume(base * factor);
+            for(const publication of participant.trackPublications.values())
+            {
+                const track = publication?.track as RemoteAudioTrack | undefined;
+
+                if(!track || track.kind !== 'audio' || typeof track.setVolume !== 'function') continue;
+
+                track.setVolume(base * factor);
+                appliedAny = true;
+
+                if((publication.source as string) !== Track.Source.Microphone)
+                {
+                    console.log(`[Zonas] atenção: áudio de ${participant.identity} veio com source="${String(publication.source)}" (não Microphone)`);
+                }
+            }
+
+            if(!appliedAny)
+            {
+                console.log(`[Zonas] volume NÃO aplicado a ${participant.identity}: nenhuma track de áudio publicada/subscrita ainda`);
             }
         }
     }
@@ -329,6 +344,10 @@ class VoiceConnection
         if(this._spatialFactors.get(identity) === factor) return;
 
         this._spatialFactors.set(identity, factor);
+
+        const name = this.getRemoteParticipants().find((p) => p.identity === identity)?.name ?? identity;
+
+        console.log(`[Zonas] volume de ${name}: ${Math.round(factor * 100)}%`);
 
         this._applyVolume(identity);
     }
@@ -421,8 +440,13 @@ class VoiceConnection
 
                 const { volume } = useVoiceStore.getState();
                 const remote = track as RemoteAudioTrack;
+                const spatialFactor = this._spatialFactors.get(participant.identity) ?? SPATIAL_DEFAULT_FACTOR;
 
-                if(typeof remote.setVolume === 'function') remote.setVolume(volume);
+                // Aplica JÁ o fator espacial: aplicar volume cheio e esperar o
+                // tick corrigir deixava som 100% por um blip (pior: se o fator
+                // não mudasse, o early-return de setSpatialVolume nunca
+                // re-aplicava e o som ficava no máximo para sempre).
+                if(typeof remote.setVolume === 'function') remote.setVolume(volume * spatialFactor);
 
                 this._refreshRemoteCount();
             }
