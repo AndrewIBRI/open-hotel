@@ -5,6 +5,7 @@ import { classNames } from '../../../../layout';
 import { useVoice } from '../../../../hooks/voice/useVoice';
 import { useVoiceZonesSpatial } from '../../../../hooks/voice/useVoiceZonesSpatial';
 import { GetRoomSession } from '../../../../api';
+import { GetUserNameByWebID } from '../../../../api/octane/session/GetUserNameByWebID';
 import { voiceConnection } from '../../../../api/voice/VoiceConnection';
 import { useVoiceStore } from '../../../../state/voiceStore';
 import '../../../../css/room/VoiceWidget.css';
@@ -12,18 +13,14 @@ import '../../../../css/room/VoiceWidget.css';
 /** Nomes dos participantes remotos para a listinha do badge de contagem. */
 const getPeople = (): { identity: string; name: string }[] =>
 {
-    const userDataManager = GetRoomSession()?.userDataManager;
-
     return voiceConnection.getRemoteParticipants().map((participant) =>
     {
         if(participant.name) return { identity: participant.identity, name: participant.name };
 
+        // LiveKit só dá "user-<webID>": resolve o nick pelo webID.
         const webID = parseInt(participant.identity.replace(/^user-/, ''), 10);
-        const name = Number.isFinite(webID) && webID > 0
-            ? (userDataManager?.getUserData(webID)?.name || participant.identity)
-            : participant.identity;
 
-        return { identity: participant.identity, name };
+        return { identity: participant.identity, name: Number.isFinite(webID) && webID > 0 ? GetUserNameByWebID(webID) : participant.identity };
     });
 };
 

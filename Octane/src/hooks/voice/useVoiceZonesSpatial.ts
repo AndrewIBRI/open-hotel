@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { GetRoomEngine, GetSessionDataManager, RoomObjectCategory } from '@octane/renderer';
 import { GetRoomSession } from '../../api';
+import { GetUserNameByWebID } from '../../api/octane/session/GetUserNameByWebID';
 import { voiceConnection } from '../../api/voice/VoiceConnection';
 import { useVoiceStore, VoiceZoneArea, VoiceZoneFactors } from '../../state/voiceStore';
 
@@ -223,7 +224,8 @@ const applySpatial = () =>
 
         // Sem tile (ex.: usuário em OUTRO quarto): entra no grupo "fora de
         // zona" do menu de pessoas (a sala dele não tem zona conhecida).
-        addToZone(cached ? zoneOf(state.zones, cached.x, cached.y) : -1, remote.name || remote.identity);
+        // O nick vem de GetUserNameByWebID (o LiveKit só dá "user-<webID>").
+        addToZone(cached ? zoneOf(state.zones, cached.x, cached.y) : -1, remote.name || GetUserNameByWebID(webID));
 
         if(state.videoGlobal) visible.add(remote.identity);
     }
