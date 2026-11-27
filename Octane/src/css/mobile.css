@@ -146,6 +146,13 @@
         pointer-events: auto;
     }
 
+    /* Icones de camera/amigos/mentions da coluna direita do toolbar:
+       fora do HUD simples no mobile. */
+    body[data-hud-mode='simple'] .tb-open-shell-right .tb-slot
+    {
+        display: none;
+    }
+
     /* Canvas da sala: toque e pinca, sem zoom/scroll da pagina por cima. */
     canvas
     {
