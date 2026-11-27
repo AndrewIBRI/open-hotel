@@ -146,9 +146,10 @@
         pointer-events: auto;
     }
 
-    /* Icones de camera/amigos/mentions da coluna direita do toolbar:
-       removidos no mobile, em qualquer modo de HUD. */
-    .tb-open-shell-right .tb-slot
+    /* Icones de camera/amigos/mentions do toolbar: removidos no mobile
+       nos modos simple e clean; no HUD completo (full) fica tudo normal. */
+    body[data-hud-mode='simple'] .tb-open-shell-right .tb-slot,
+    body[data-hud-mode='clean'] .tb-open-shell-right .tb-slot
     {
         display: none;
     }
