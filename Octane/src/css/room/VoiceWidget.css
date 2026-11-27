@@ -6,13 +6,102 @@
     bottom: 255px;
     left: 8px;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
     gap: 2px;
     padding: 4px 6px;
     border-radius: 6px;
     background: rgba(34, 34, 30, 0.86);
     box-shadow: inset -1px 0 rgba(255, 255, 255, 0.05), 0 2px 0 rgba(0, 0, 0, 0.45);
     z-index: 70;
+}
+
+/* Linha de ícones (mic, câmera, tela, engrenagem). */
+.octane-voice-widget__buttons {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+/* ---- Textos de sala/zona sob os ícones (clicáveis: lista por zona) ---- */
+.octane-voice-widget__zoneinfo {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    padding: 3px 6px;
+    border: none;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    cursor: pointer;
+    text-align: left;
+    max-width: 190px;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.14);
+    }
+}
+
+.octane-voice-widget__zoneinfo-room,
+.octane-voice-widget__zoneinfo-zone {
+    font-size: 10px;
+    font-weight: bold;
+    line-height: 1.3;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.octane-voice-widget__zoneinfo-room {
+    color: #7fc0ff;
+}
+
+.octane-voice-widget__zoneinfo-zone {
+    color: #ffd75e;
+}
+
+/* Botão do olho no menu de configurações: verde = textos visíveis. */
+.octane-voice-widget__eye-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 82, 82, 0.55);
+    background: rgba(255, 82, 82, 0.14);
+    color: #ff9b93;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    text-align: left;
+
+    &.is-active {
+        border-color: rgba(46, 204, 113, 0.8);
+        background: rgba(46, 204, 113, 0.22);
+        color: #a8f0c4;
+    }
+
+    &:hover {
+        filter: brightness(1.15);
+    }
+}
+
+/* Grupos do menu de pessoas (por zona). */
+.octane-voice-widget__zone-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.octane-voice-widget__zone-group-title {
+    font-weight: bold;
+    color: #ffd75e;
+    letter-spacing: 0.4px;
+    line-height: 1.4;
 }
 
 .octane-voice-widget__button {
@@ -217,11 +306,12 @@
     }
 }
 
-/* Reaproveita o visual do menu de configurações; ancora no badge. */
+/* Reaproveita o visual do menu de configurações; ancora nos textos de zona. */
 .octane-voice-widget__people-list {
-    left: auto;
-    right: 0;
-    width: 200px;
+    left: 0;
+    right: auto;
+    bottom: 6px;
+    width: 220px;
     max-height: 260px;
     overflow-y: auto;
 }

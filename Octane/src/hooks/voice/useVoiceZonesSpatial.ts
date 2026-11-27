@@ -46,7 +46,7 @@ const applySpatial = () =>
     // Sem zonas (ou modo assembleia): todos no mesmo volume e todos visíveis.
     if(!state.zones.length || state.assembly)
     {
-        useVoiceStore.setState({ currentZone: -1, videoVisible: null });
+        useVoiceStore.setState({ currentZone: -1, videoVisible: null, zonePeople: [] });
 
         const full = new Map<string, number>();
 
@@ -116,32 +116,44 @@ const applySpatial = () =>
         for(const remote of remotes) fallback.set(remote.identity, factors.outside / 100);
 
         voiceConnection.applySpatialFactors(fallback);
-        useVoiceStore.setState({ currentZone: -1, videoVisible: new Set<string>(), spatialApplied: new Set(fallback.keys()) });
+
+        const noMe: { zone: number; names: string[] }[] = [];
+
+        for(const user of users) noMe.push({ zone: zoneOf(state.zones, user.x, user.y), names: [ userDataManager.getUserDataByIndex(user.webID)?.name ?? `user-${ user.webID }` ] });
+
+        useVoiceStore.setState({ currentZone: -1, videoVisible: new Set<string>(), spatialApplied: new Set(fallback.keys()), zonePeople: noMe.sort((a, b) => a.zone - b.zone) });
 
         return;
     }
 
     const myZone = zoneOf(state.zones, me.x, me.y);
 
+    /** Agrupa quem está em cada zona (incl. eu) para o menu de pessoas. */
+    const zoneName = (index: number): string => (index >= 0 ? state.zones[index]?.name ?? `#${index}` : 'FORA DE ZONA');
+    const peopleByZone = new Map<number, string[]>();
+
+    const addToZone = (zone: number, name: string): void =>
+    {
+        const names = peopleByZone.get(zone) ?? [];
+
+        names.push(name);
+        peopleByZone.set(zone, names);
+    };
+
+    for(const user of users)
+    {
+        addToZone(zoneOf(state.zones, user.x, user.y), user.webID === userId ? `${ GetSessionDataManager().userName } (eu)` : userDataManager.getUserDataByIndex(user.webID)?.name ?? `user-${ user.webID }`);
+    }
+
     // [Zonas] Log de debug: entrada/saída de zona + quem está em cada zona.
     if(myZone !== previousZone)
     {
-        const zoneName = (index: number): string => (index >= 0 ? state.zones[index]?.name ?? `#${index}` : 'FORA DE ZONA');
-        const inMyZone = users
-            .filter((user) => user.webID !== userId && zoneOf(state.zones, user.x, user.y) === myZone)
-            .map((user) => userDataManager.getUserDataByIndex(user.webID)?.name ?? `user-${user.webID}`);
         const zoneCounts: Record<string, string[]> = {};
 
-        for(const user of users)
-        {
-            const key = zoneName(zoneOf(state.zones, user.x, user.y));
+        for(const [ zone, names ] of peopleByZone) zoneCounts[zoneName(zone)] = names;
 
-            (zoneCounts[key] = zoneCounts[key] ?? []).push(user.webID === userId ? `${GetSessionDataManager().userName} (eu)` : userDataManager.getUserDataByIndex(user.webID)?.name ?? `user-${user.webID}`);
-        }
-
-        console.log(`[Zonas] ${previousZone === -2 ? 'Início' : 'Mudança de zona'}: agora em "${zoneName(myZone)}" (antes: ${zoneName(previousZone)})`);
+        console.log(`[Zonas] ${ previousZone === -2 ? 'Início' : 'Mudança de zona' }: agora em "${ zoneName(myZone) }" (antes: ${ zoneName(previousZone) })`);
         console.log('[Zonas] Pessoas conectadas por zona:', JSON.stringify(zoneCounts), '| conectados no LiveKit:', remotes.map((r) => r.name || r.identity).join(', '));
-        console.log(`[Zonas] Na minha zona ("${zoneName(myZone)}"):`, inMyZone.length ? inMyZone.join(', ') : '(ninguém)');
     }
 
     previousZone = myZone;
@@ -209,6 +221,10 @@ const applySpatial = () =>
 
         applied.set(remote.identity, factor);
 
+        // Sem tile (ex.: usuário em OUTRO quarto): entra no grupo "fora de
+        // zona" do menu de pessoas (a sala dele não tem zona conhecida).
+        addToZone(cached ? zoneOf(state.zones, cached.x, cached.y) : -1, remote.name || remote.identity);
+
         if(state.videoGlobal) visible.add(remote.identity);
     }
 
@@ -218,8 +234,13 @@ const applySpatial = () =>
         if(!knownIds.has(webID)) lastKnownLocation.delete(webID);
     }
 
+    // Publica quem está em cada zona (ordem de zona, -1 por último) para o widget.
+    const zonePeople = Array.from(peopleByZone.entries())
+        .sort((a, b) => a[0] - b[0])
+        .map(([ zone, names ]) => ({ zone, names }));
+
     voiceConnection.applySpatialFactors(applied);
-    useVoiceStore.setState({ spatialApplied: new Set(applied.keys()), videoVisible: visible });
+    useVoiceStore.setState({ spatialApplied: new Set(applied.keys()), videoVisible: visible, zonePeople });
 };
 
 /**

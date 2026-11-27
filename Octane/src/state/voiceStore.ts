@@ -94,6 +94,10 @@ interface VoiceState {
     roomName: string;
     /** Index of the zone the user currently stands in, -1 when outside any zone. */
     currentZone: number;
+    /** Quem está em qual zona (incl. eu): para o menu de pessoas e o contador de zona. */
+    zonePeople: { zone: number; names: string[] }[];
+    /** Mostra/oculta os textos de sala/zona sob os ícones de voz (olho no menu). */
+    zoneInfoVisible: boolean;
 
     setUrl: (url: string) => void;
     setToken: (token: string) => void;
@@ -126,6 +130,8 @@ interface VoiceState {
     setZoneTilemap: (tilemap: string) => void;
     setRoomName: (roomName: string) => void;
     setCurrentZone: (currentZone: number) => void;
+    setZonePeople: (zonePeople: { zone: number; names: string[] }[]) => void;
+    setZoneInfoVisible: (visible: boolean) => void;
 }
 
 const STORAGE_KEY = 'octane:voice:auto-mute-on-blur';
@@ -195,6 +201,18 @@ export const useVoiceStore = createOctaneStore<VoiceState>()((set) => ({
     zoneTilemap: '',
     roomName: '',
     currentZone: -1,
+    zonePeople: [],
+    zoneInfoVisible: (() =>
+    {
+        try
+        {
+            return window.localStorage.getItem('octane:voice:zone-info-visible') !== '0';
+        }
+        catch
+        {
+            return true;
+        }
+    })(),
 
     addVideo: (video) => set((state) =>
     {
@@ -232,6 +250,20 @@ export const useVoiceStore = createOctaneStore<VoiceState>()((set) => ({
     setZoneTilemap: (zoneTilemap) => set({ zoneTilemap }),
     setRoomName: (roomName) => set({ roomName }),
     setCurrentZone: (currentZone) => set({ currentZone }),
+    setZonePeople: (zonePeople) => set({ zonePeople }),
+    setZoneInfoVisible: (zoneInfoVisible) =>
+    {
+        try
+        {
+            window.localStorage.setItem('octane:voice:zone-info-visible', zoneInfoVisible ? '1' : '0');
+        }
+        catch
+        {
+            // storage can be blocked; the preference just won't persist
+        }
+
+        set({ zoneInfoVisible });
+    },
 
     setError: (error) => set({ error }),
     setDevices: (devices) => set({ devices }),
