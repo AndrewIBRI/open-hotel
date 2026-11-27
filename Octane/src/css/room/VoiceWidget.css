@@ -276,10 +276,7 @@
     text-overflow: ellipsis;
 }
 
-/* ---- Badge de contagem clicável: abre a lista de pessoas na sala ---- */
-.octane-voice-widget__people {
-    position: relative;
-}
+/* ---- Lista de pessoas por zona (abre acima dos ícones) ---- */
 
 .octane-voice-widget__count {
     min-width: 20px;
@@ -306,11 +303,17 @@
     }
 }
 
-/* Reaproveita o visual do menu de configurações; ancora nos textos de zona. */
+/* Reaproveita o visual do menu de configurações; abre ACIMA dos ícones de
+   controle (o __people não é posicionado, então o menu ancora no widget
+   raiz: bottom 100% = topo do widget). */
+.octane-voice-widget__people {
+    position: static;
+}
+
 .octane-voice-widget__people-list {
+    bottom: calc(100% + 4px);
     left: 0;
     right: auto;
-    bottom: 6px;
     width: 220px;
     max-height: 260px;
     overflow-y: auto;

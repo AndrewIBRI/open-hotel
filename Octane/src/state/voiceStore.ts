@@ -206,11 +206,12 @@ export const useVoiceStore = createOctaneStore<VoiceState>()((set) => ({
     {
         try
         {
-            return window.localStorage.getItem('octane:voice:zone-info-visible') !== '0';
+            // Padrão DESLIGADO: só liga pelo menu (Visualizar zona).
+            return window.localStorage.getItem('octane:voice:zone-info-visible') === '1';
         }
         catch
         {
-            return true;
+            return false;
         }
     })(),
 

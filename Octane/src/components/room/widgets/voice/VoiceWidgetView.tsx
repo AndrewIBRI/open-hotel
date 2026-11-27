@@ -94,6 +94,12 @@ export const VoiceWidgetView: FC<{}> = (props) =>
 
         const onOutside = (event: MouseEvent) =>
         {
+            // O próprio botão de toggle NÃO é "fora": se o mousedown dele
+            // fechasse, o click seguinte reabria (impossível fechar no botão).
+            const target = event.target as HTMLElement;
+
+            if(target.closest('.octane-voice-widget__zoneinfo')) return;
+
             if(peopleRef.current && !peopleRef.current.contains(event.target as Node)) setPeopleOpen(false);
         };
 
@@ -251,7 +257,7 @@ export const VoiceWidgetView: FC<{}> = (props) =>
                 </div> }
             <div className="octane-voice-widget__people" ref={ peopleRef }>
                 { peopleOpen &&
-                    <div className="octane-voice-widget__menu octane-voice-widget__people-list">
+                    <div className="octane-voice-widget__menu octane-voice-widget__people-list" onClick={ (event) => event.stopPropagation() }>
                         <div className="octane-voice-widget__menu-status">Pessoas por zona</div>
                         { groups.length > 0
                             ? groups.map((group) =>
