@@ -8,6 +8,10 @@ CREATE TABLE IF NOT EXISTS `room_voice_zones` (
   `y` int(11) NOT NULL DEFAULT 0,
   `width` int(11) NOT NULL DEFAULT 1,
   `height` int(11) NOT NULL DEFAULT 1,
+  `factor_mode` int(11) NOT NULL DEFAULT 0,
+  `custom_same_factor` int(11) DEFAULT NULL,
+  `custom_other_factor` int(11) DEFAULT NULL,
+  `custom_outside_factor` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `room_id` (`room_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
@@ -20,6 +24,13 @@ CREATE TABLE IF NOT EXISTS `room_voice_zone_settings` (
   `video_global` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`room_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+-- Bancos criados antes dos fatores por zona: adiciona as colunas (idempotente).
+ALTER TABLE `room_voice_zones`
+  ADD COLUMN IF NOT EXISTS `factor_mode` int(11) NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS `custom_same_factor` int(11) DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS `custom_other_factor` int(11) DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS `custom_outside_factor` int(11) DEFAULT NULL;
 
 -- Bancos criados antes do video_global: adiciona a coluna (idempotente).
 ALTER TABLE `room_voice_zone_settings`

@@ -1,6 +1,14 @@
 import { createOctaneStore } from './createOctaneStore';
 
 /** One audio zone rectangle (tile coords), edited by admins in-game. */
+/** Percentuais de volume (0-100) aplicados às três situações de uma zona. */
+export interface VoiceZoneFactors
+{
+    same: number;
+    other: number;
+    outside: number;
+}
+
 export interface VoiceZoneArea
 {
     id: number;
@@ -9,6 +17,10 @@ export interface VoiceZoneArea
     y: number;
     width: number;
     height: number;
+    /** 0 = herda os fatores globais da sala; 1 = fatores próprios da zona. */
+    factorMode: number;
+    /** Preenchido somente quando factorMode === 1. */
+    factors: VoiceZoneFactors | null;
 }
 
 /** One video tile in the transmission window (local preview or remote stream). */

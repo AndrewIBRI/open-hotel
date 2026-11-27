@@ -2187,7 +2187,9 @@ public class Room implements Comparable<Room>, ISerialize, Runnable {
 
     private List<polaris.hotel.voice.VoiceZone> loadVoiceZones() {
         final List<polaris.hotel.voice.VoiceZone> zones = new ArrayList<>();
-        final String sql = "SELECT id, name, x, y, width, height FROM room_voice_zones WHERE room_id = ? ORDER BY id";
+        final String sql = "SELECT id, name, x, y, width, height, factor_mode, "
+                + "custom_same_factor, custom_other_factor, custom_outside_factor "
+                + "FROM room_voice_zones WHERE room_id = ? ORDER BY id";
 
         try (Connection connection = Emulator.getDatabase().getDataSource().getConnection();
              java.sql.PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -2201,7 +2203,11 @@ public class Room implements Comparable<Room>, ISerialize, Runnable {
                             set.getInt("x"),
                             set.getInt("y"),
                             set.getInt("width"),
-                            set.getInt("height")));
+                            set.getInt("height"),
+                            set.getInt("factor_mode"),
+                            set.getObject("custom_same_factor", Integer.class),
+                            set.getObject("custom_other_factor", Integer.class),
+                            set.getObject("custom_outside_factor", Integer.class)));
                 }
             }
         } catch (SQLException e) {
@@ -2212,18 +2218,43 @@ public class Room implements Comparable<Room>, ISerialize, Runnable {
     }
 
     private void saveVoiceZones() {
+        final String deleteSql = "DELETE FROM room_voice_zones WHERE room_id = ?";
+        final String insertSql = "INSERT INTO room_voice_zones "
+                + "(room_id, name, x, y, width, height, factor_mode, "
+                + "custom_same_factor, custom_other_factor, custom_outside_factor) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
         try (Connection connection = Emulator.getDatabase().getDataSource().getConnection()) {
             connection.setAutoCommit(false);
 
-            try (java.sql.Statement statement = connection.createStatement()) {
-                statement.execute("DELETE FROM room_voice_zones WHERE room_id = " + this.getId());
+            try {
+                try (java.sql.PreparedStatement delete = connection.prepareStatement(deleteSql)) {
+                    delete.setInt(1, this.getId());
+                    delete.executeUpdate();
+                }
 
-                for (polaris.hotel.voice.VoiceZone zone : this.voiceZones) {
-                    final String name = zone.name() == null ? "" : zone.name().replace("'", "''");
+                try (java.sql.PreparedStatement insert = connection.prepareStatement(insertSql)) {
+                    for (polaris.hotel.voice.VoiceZone zone : this.voiceZones) {
+                        insert.setInt(1, this.getId());
+                        insert.setString(2, zone.name() == null ? "" : zone.name());
+                        insert.setInt(3, zone.x());
+                        insert.setInt(4, zone.y());
+                        insert.setInt(5, zone.width());
+                        insert.setInt(6, zone.height());
+                        insert.setInt(7, zone.factorMode());
 
-                    statement.execute("INSERT INTO room_voice_zones (room_id, name, x, y, width, height) VALUES ("
-                            + this.getId() + ", '" + name + "', " + zone.x() + ", " + zone.y() + ", "
-                            + zone.width() + ", " + zone.height() + ")");
+                        if (zone.isCustom()) {
+                            insert.setInt(8, zone.sameFactor());
+                            insert.setInt(9, zone.otherFactor());
+                            insert.setInt(10, zone.outsideFactor());
+                        } else {
+                            insert.setNull(8, java.sql.Types.INTEGER);
+                            insert.setNull(9, java.sql.Types.INTEGER);
+                            insert.setNull(10, java.sql.Types.INTEGER);
+                        }
+
+                        insert.executeUpdate();
+                    }
                 }
 
                 connection.commit();

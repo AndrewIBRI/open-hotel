@@ -2,7 +2,7 @@ import { FC, useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { GetRoomEngine } from '@octane/renderer';
 import { GetRoomSession } from '../../../../api';
 import { OctaneCardContentView, OctaneCardHeaderView, OctaneCardView } from '../../../../common/card';
-import { useVoiceStore, VoiceZoneArea } from '../../../../state/voiceStore';
+import { useVoiceStore, VoiceZoneArea, VoiceZoneFactors } from '../../../../state/voiceStore';
 import { saveVoiceZones } from '../../../../api/voice/saveVoiceZones';
 import { VoiceZoneCanvas, zoneColor } from './VoiceZoneCanvas';
 import '../../../../css/room/VoiceZoneEditor.css';
@@ -68,7 +68,12 @@ export const VoiceZoneEditorView: FC<{}> = () =>
 
     const resetDraft = useCallback(() =>
     {
-        setDraft(zones.map((zone) => ({ ...zone })));
+        // Normaliza zonas vindas de versões antigas do servidor (sem campos de fator).
+        setDraft(zones.map((zone) => ({
+            ...zone,
+            factorMode: zone.factorMode === 1 ? 1 : 0,
+            factors: zone.factorMode === 1 && zone.factors ? { ...zone.factors } : null
+        })));
         setFactors({ ...zoneFactors });
         setVideoGlobal(storeVideoGlobal);
         setSelected(-1);
@@ -92,7 +97,10 @@ export const VoiceZoneEditorView: FC<{}> = () =>
 
         setSelected(index);
         drawingRef.current = { startX: x, startY: y, index };
-        setDraft((current) => [ ...current, { id: 0, name: `Zona ${current.length + 1}`, x, y, width: 1, height: 1 } ]);
+        setDraft((current) => [ ...current, {
+            id: 0, name: `Zona ${current.length + 1}`, x, y, width: 1, height: 1,
+            factorMode: 0, factors: null
+        } ]);
     };
 
     const hoverDraw = (x: number, y: number) =>
@@ -130,9 +138,41 @@ export const VoiceZoneEditorView: FC<{}> = () =>
         setSelected(-1);
     };
 
+    /** Ativa os fatores próprios da zona, começando pelos valores padrão da sala. */
+    const useCustomFactors = (index: number) =>
+    {
+        setDraft((current) => current.map((zone, i) => (i === index
+            ? { ...zone, factorMode: 1, factors: { ...(zone.factors ?? factors) } }
+            : zone)));
+    };
+
+    /** Volta a herdar os fatores globais (modo 0 no protocolo). */
+    const useGlobalFactors = (index: number) =>
+    {
+        setDraft((current) => current.map((zone, i) => (i === index
+            ? { ...zone, factorMode: 0, factors: null }
+            : zone)));
+    };
+
+    const setZoneFactor = (index: number, key: keyof VoiceZoneFactors, value: number) =>
+    {
+        setDraft((current) => current.map((zone, i) =>
+        {
+            if(i !== index) return zone;
+
+            const custom = { ...(zone.factors ?? factors), [key]: value };
+
+            return { ...zone, factorMode: 1, factors: custom };
+        }));
+    };
+
     const save = () =>
     {
-        saveVoiceZones(draft.map((zone) => ({ id: 0, name: zone.name, x: zone.x, y: zone.y, width: zone.width, height: zone.height })), factors, videoGlobal);
+        saveVoiceZones(draft.map((zone) => ({
+            id: 0, name: zone.name, x: zone.x, y: zone.y, width: zone.width, height: zone.height,
+            factorMode: zone.factorMode === 1 ? 1 : 0,
+            factors: zone.factorMode === 1 ? zone.factors : null
+        })), factors, videoGlobal);
         setZoneEditorOpen(false);
     };
 
@@ -182,10 +222,10 @@ export const VoiceZoneEditorView: FC<{}> = () =>
                             </div>
                             <div className="fp-panel is-preview">
                                 <div className="fp-panel-head">
-                                    <span className="fp-panel-title">Volumes (por sala)</span>
-                                    <span className="fp-panel-info">Aplicados a todos os avatares</span>
+                                    <span className="fp-panel-title">Zonas e volumes</span>
+                                    <span className="fp-panel-info">Padrão da sala + fatores por zona</span>
                                 </div>
-                                <div className="fp-panel-body">
+                                <div className="fp-panel-body voice-zone-editor-preview-body">
                                     <ul className="voice-zone-editor-list">
                                         { draft.map((zone, index) => (
                                             <li
@@ -204,15 +244,50 @@ export const VoiceZoneEditorView: FC<{}> = () =>
                                                     } }
                                                 />
                                                 <span className="voice-zone-editor-size">{ zone.width }x{ zone.height } ({ zone.x },{ zone.y })</span>
+                                                { zone.factorMode === 1 && <span className="voice-zone-editor-custom-tag">custom</span> }
                                             </li>
                                         )) }
                                     </ul>
-                                    { selected >= 0 && (
-                                        <div className="voice-zone-editor-actions">
-                                            <button className="voice-zone-editor-button is-danger" onClick={ deleteSelected }>Apagar zona</button>
+                                    { selected >= 0 && draft[selected] && (
+                                        <div className="voice-zone-editor-custom">
+                                            <div className="voice-zone-editor-factors-title">
+                                                FATORES DE { (draft[selected].name || `ZONA ${selected + 1}`).toUpperCase() }
+                                            </div>
+                                            <div className="voice-zone-editor-actions">
+                                                { draft[selected].factorMode === 1
+                                                    ? <button className="voice-zone-editor-button" onClick={ () => useGlobalFactors(selected) }>Usar padrão</button>
+                                                    : <button className="voice-zone-editor-button" onClick={ () => useCustomFactors(selected) }>Personalizar</button> }
+                                                <button className="voice-zone-editor-button is-danger" onClick={ deleteSelected }>Apagar zona</button>
+                                            </div>
+                                            { draft[selected].factorMode === 1 && draft[selected].factors && (
+                                                <div className="voice-zone-editor-factors voice-zone-editor-factors--custom">
+                                                    <label title="Vocês dois dentro DESTA zona">
+                                                        Na mesma zona
+                                                        <input type="range" min={ 0 } max={ 100 } value={ draft[selected].factors!.same }
+                                                            onChange={ (event) => setZoneFactor(selected, 'same', Number(event.target.value)) } />
+                                                        <b>{ draft[selected].factors!.same }%</b>
+                                                    </label>
+                                                    <label title="Você nesta zona e o outro em outra zona diferente">
+                                                        Em outra zona
+                                                        <input type="range" min={ 0 } max={ 100 } value={ draft[selected].factors!.other }
+                                                            onChange={ (event) => setZoneFactor(selected, 'other', Number(event.target.value)) } />
+                                                        <b>{ draft[selected].factors!.other }%</b>
+                                                    </label>
+                                                    <label title="Você nesta zona e o outro na área aberta (fora de zona)">
+                                                        Fora de zona
+                                                        <input type="range" min={ 0 } max={ 100 } value={ draft[selected].factors!.outside }
+                                                            onChange={ (event) => setZoneFactor(selected, 'outside', Number(event.target.value)) } />
+                                                        <b>{ draft[selected].factors!.outside }%</b>
+                                                    </label>
+                                                </div>
+                                            ) }
+                                            { draft[selected].factorMode === 0 && (
+                                                <div className="voice-zone-editor-hint">Herdando os padrões da sala. Clique em “Personalizar” para definir os desta zona.</div>
+                                            ) }
                                         </div>
                                     ) }
                                     <div className="voice-zone-editor-factors">
+                                        <div className="voice-zone-editor-factors-title">TODAS AS ZONAS (padrão)</div>
                                         <label title="Vocês dois dentro da MESMA zona — ou ambos fora de qualquer zona (área aberta)">
                                             Na mesma zona
                                             <input type="range" min={ 0 } max={ 100 } value={ factors.same }

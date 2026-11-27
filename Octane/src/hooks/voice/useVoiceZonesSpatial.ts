@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { GetRoomEngine, GetSessionDataManager, RoomObjectCategory } from '@octane/renderer';
 import { GetRoomSession } from '../../api';
 import { voiceConnection } from '../../api/voice/VoiceConnection';
-import { useVoiceStore, VoiceZoneArea } from '../../state/voiceStore';
+import { useVoiceStore, VoiceZoneArea, VoiceZoneFactors } from '../../state/voiceStore';
 
 const SPATIAL_TICK_MS = 500;
 
@@ -19,20 +19,38 @@ interface UserTile
     y: number;
 }
 
+/**
+ * Última posição conhecida por webID. Enquanto o avatar caminha/carrega, o
+ * objeto de sala pode não expor getLocation(): sem cache o usuário era
+ * ignorado no tick e ficava com o fator de volume anterior (som vazando).
+ */
+const lastKnownLocation = new Map<number, { x: number; y: number }>();
+
+/** Extrai o webID da identidade LiveKit (user-<id>). */
+const webIdOf = (identity: string): number =>
+{
+    const webID = parseInt(identity.replace(/^user-/, ''), 10);
+
+    return Number.isFinite(webID) && webID > 0 ? webID : -1;
+};
+
 /** Reads every avatar's tile and applies per-participant volume by zone. */
 const applySpatial = () =>
 {
     const state = useVoiceStore.getState();
+    const remotes = voiceConnection.getRemoteParticipants();
 
     // Sem zonas (ou modo assembleia): todos no mesmo volume e todos visíveis.
     if(!state.zones.length || state.assembly)
     {
         useVoiceStore.setState({ currentZone: -1, videoVisible: null });
 
-        for(const identity of state.spatialApplied)
-        {
-            voiceConnection.setSpatialVolume(identity, FACTOR_FULL);
-        }
+        const full = new Map<string, number>();
+
+        for(const remote of remotes) full.set(remote.identity, FACTOR_FULL);
+
+        // Aplica a TODOS os remotos, inclusive os que ainda não têm fator salvo.
+        voiceConnection.applySpatialFactors(full);
 
         return;
     }
@@ -42,11 +60,12 @@ const applySpatial = () =>
     if(!session) return;
 
     const userId = GetSessionDataManager().userId;
+    const userDataManager = session.userDataManager;
     const users: UserTile[] = [];
 
     for(const unit of GetRoomEngine().getRoomObjects(session.roomId, RoomObjectCategory.UNIT))
     {
-        const userData = session.userDataManager.getUserDataByIndex(unit.id);
+        const userData = userDataManager.getUserDataByIndex(unit.id);
 
         if(!userData || userData.webID <= 0) continue;
 
@@ -54,16 +73,22 @@ const applySpatial = () =>
         const location = typeof unit.getLocation === 'function'
             ? unit.getLocation()
             : (unit as { location?: { x: number; y: number } }).location;
+        const current = location
+            ? { x: Math.floor(location.x), y: Math.floor(location.y) }
+            : null;
 
-        if(!location) continue;
+        // Posição ausente/inválida (andando ou carregando): reusa a última conhecida.
+        const tile = current && Number.isFinite(current.x) && Number.isFinite(current.y)
+            ? current
+            : lastKnownLocation.get(userData.webID);
 
-        users.push({ webID: userData.webID, x: Math.floor(location.x), y: Math.floor(location.y) });
+        if(!tile) continue;
+
+        lastKnownLocation.set(userData.webID, tile);
+        users.push({ webID: userData.webID, x: tile.x, y: tile.y });
     }
 
-    const me = users.find((user) => user.webID === userId);
-
-    // Sem a minha posição não dá para calcular: mantém o que já está aplicado.
-    if(!me) return;
+    const factors = state.zoneFactors ?? { same: DEFAULT_SAME, other: DEFAULT_OTHER, outside: DEFAULT_OUTSIDE };
 
     const zoneOf = (zones: VoiceZoneArea[], x: number, y: number): number =>
     {
@@ -77,14 +102,51 @@ const applySpatial = () =>
         return -1;
     };
 
+    const me = users.find((user) => user.webID === userId);
+
+    // Sem a minha posição conhecida não dá para calcular proximidade: silencia
+    // todos com o fator 'outside' para não vazar som de outra zona.
+    if(!me)
+    {
+        const fallback = new Map<string, number>();
+
+        for(const remote of remotes) fallback.set(remote.identity, factors.outside / 100);
+
+        voiceConnection.applySpatialFactors(fallback);
+        useVoiceStore.setState({ currentZone: -1, videoVisible: new Set<string>(), spatialApplied: new Set(fallback.keys()) });
+
+        return;
+    }
+
     const myZone = zoneOf(state.zones, me.x, me.y);
+
+    /**
+     * Fator efetivo = o da zona ONDE EU ESTOU, se ela tiver fatores próprios;
+     * senão os padrões da sala. Não usamos a zona do outro participante: o
+     * objetivo é personalizar cada zona ("quarto X quase não vaza som para
+     * fora"), e o volume é aplicado à faixa DELE no meu receptor — então a
+     * decisão tem de partir da minha zona, aquela em que eu estou.
+     */
+    const effectiveFactors: VoiceZoneFactors =
+        myZone >= 0 && state.zones[myZone]?.factorMode === 1 && state.zones[myZone]?.factors
+            ? state.zones[myZone].factors!
+            : factors;
 
     // Indicador do HUD: em qual zona estamos agora.
     useVoiceStore.setState({ currentZone: myZone });
 
-    const factors = state.zoneFactors ?? { same: DEFAULT_SAME, other: DEFAULT_OTHER, outside: DEFAULT_OUTSIDE };
-    const applied = new Set<string>();
+    const applied = new Map<string, number>();
     const visible = new Set<string>();
+
+    // Mesma semântica de antes: "mesma zona" inclui ambos fora de zona (área
+    // aberta comum); "fora de zona" é um dentro e outro fora.
+    const proximity = (theirZone: number): { factor: number; sameArea: boolean } =>
+    {
+        if(myZone === -1 && theirZone === -1) return { factor: effectiveFactors.same / 100, sameArea: true };
+        if(myZone === -1 || theirZone === -1) return { factor: effectiveFactors.outside / 100, sameArea: false };
+
+        return { factor: (theirZone === myZone ? effectiveFactors.same : effectiveFactors.other) / 100, sameArea: theirZone === myZone };
+    };
 
     for(const user of users)
     {
@@ -92,44 +154,46 @@ const applySpatial = () =>
 
         // Identidade LiveKit do usuário (ver voiceServer/token).
         const identity = `user-${user.webID}`;
+        const { factor, sameArea } = proximity(zoneOf(state.zones, user.x, user.y));
 
-        const zone = zoneOf(state.zones, user.x, user.y);
-
-        // Semântica dos fatores:
-        // - "mesma zona": eu e ele na MESMA zona (inclui ambos fora de zona — área aberta comum).
-        // - "outra zona": cada um numa zona diferente (cômodos distintos).
-        // - "fora de zona": um dos dois está em NENHUMA zona (área aberta) e o outro está numa zona.
-        let factor: number;
-        // "Mesma área": mesma zona, ou ambos fora de qualquer zona (área aberta).
-        let sameArea: boolean;
-
-        if(myZone === -1 && zone === -1)
-        {
-            factor = factors.same;
-            sameArea = true;
-        }
-        else if(myZone === -1 || zone === -1)
-        {
-            factor = factors.outside;
-            sameArea = false;
-        }
-        else
-        {
-            factor = (zone === myZone) ? factors.same : factors.other;
-            sameArea = zone === myZone;
-        }
-
-        voiceConnection.setSpatialVolume(identity, factor / 100);
+        applied.set(identity, factor);
 
         // Vídeo segue o MESMO modelo do áudio: só visível na mesma área. O modo
         // global (videoGlobal) mostra pra sala inteira, ignorando as zonas.
-        if(!state.videoGlobal && !sameArea) visible.delete(identity);
-        else visible.add(identity);
-
-        applied.add(identity);
+        if(state.videoGlobal || sameArea) visible.add(identity);
     }
 
-    useVoiceStore.setState({ spatialApplied: applied, videoVisible: visible });
+    // Participantes remotos SEM tile no engine: usam a ÚLTIMA posição
+    // conhecida; sem cache recebem 'outside' (muffled) — nunca o fator full,
+    // para não vazar som por engano.
+    const knownIds = new Set<number>([ userId ]);
+
+    for(const remote of remotes)
+    {
+        const webID = webIdOf(remote.identity);
+
+        if(webID > 0) knownIds.add(webID);
+
+        if(applied.has(remote.identity)) continue;
+
+        const cached = webID > 0 ? lastKnownLocation.get(webID) : undefined;
+        const factor = cached
+            ? proximity(zoneOf(state.zones, cached.x, cached.y)).factor
+            : effectiveFactors.outside / 100;
+
+        applied.set(remote.identity, factor);
+
+        if(state.videoGlobal) visible.add(remote.identity);
+    }
+
+    // Limpa posições de quem saiu da sala (mantém a minha, que é local).
+    for(const webID of Array.from(lastKnownLocation.keys()))
+    {
+        if(!knownIds.has(webID)) lastKnownLocation.delete(webID);
+    }
+
+    voiceConnection.applySpatialFactors(applied);
+    useVoiceStore.setState({ spatialApplied: new Set(applied.keys()), videoVisible: visible });
 };
 
 /**

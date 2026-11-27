@@ -54,12 +54,33 @@ public class SaveVoiceZonesEvent extends MessageHandler {
             final int width = this.packet.readInt();
             final int height = this.packet.readInt();
 
+            // Por zona: modo (0=herda, 1=custom) e, se custom, os 3 fatores.
+            final Integer modeValue = this.packet.readInt();
+            final boolean customRequested = modeValue != null && modeValue == VoiceZone.MODE_CUSTOM;
+
+            Integer customSame = null;
+            Integer customOther = null;
+            Integer customOutside = null;
+
+            if (customRequested) {
+                customSame = this.packet.readInt();
+                customOther = this.packet.readInt();
+                customOutside = this.packet.readInt();
+            }
+
+            // Um pacote mal formado (modo custom sem fatores) cai para o padrão,
+            // mantendo a leitura dos 3 ints -> o restante do pacote não desalinha.
+            final int mode = customRequested && customSame != null && customOther != null && customOutside != null
+                    ? VoiceZone.MODE_CUSTOM
+                    : VoiceZone.MODE_GLOBAL;
+
             if (name == null || name.isBlank()) continue;
 
             zones.add(new VoiceZone(
                     zones.size() + 1,
                     name.substring(0, Math.min(64, name.length())),
-                    clamp(x), clamp(y), clamp(width), clamp(height)));
+                    clamp(x), clamp(y), clamp(width), clamp(height),
+                    mode, customSame, customOther, customOutside));
         }
 
         room.setVoiceZones(zones);

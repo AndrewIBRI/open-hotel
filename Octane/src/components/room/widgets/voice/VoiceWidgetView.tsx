@@ -5,8 +5,27 @@ import { classNames } from '../../../../layout';
 import { useVoice } from '../../../../hooks/voice/useVoice';
 import { useVoiceZonesSpatial } from '../../../../hooks/voice/useVoiceZonesSpatial';
 import { GetRoomSession } from '../../../../api';
+import { voiceConnection } from '../../../../api/voice/VoiceConnection';
 import { useVoiceStore } from '../../../../state/voiceStore';
 import '../../../../css/room/VoiceWidget.css';
+
+/** Nomes dos participantes remotos para a listinha do badge de contagem. */
+const getPeople = (): { identity: string; name: string }[] =>
+{
+    const userDataManager = GetRoomSession()?.userDataManager;
+
+    return voiceConnection.getRemoteParticipants().map((participant) =>
+    {
+        if(participant.name) return { identity: participant.identity, name: participant.name };
+
+        const webID = parseInt(participant.identity.replace(/^user-/, ''), 10);
+        const name = Number.isFinite(webID) && webID > 0
+            ? (userDataManager?.getUserData(webID)?.name || participant.identity)
+            : participant.identity;
+
+        return { identity: participant.identity, name };
+    });
+};
 
 /**
  * HUD do sistema de voz de sala (docs/PLANO-VOZ-CAMERA.md): microfone,
@@ -42,6 +61,30 @@ export const VoiceWidgetView: FC<{}> = (props) =>
 
     const [ menuOpen, setMenuOpen ] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+
+    const [ peopleOpen, setPeopleOpen ] = useState(false);
+    const peopleRef = useRef<HTMLDivElement>(null);
+    const people = peopleOpen ? getPeople() : [];
+
+    // Se a sala esvazia, a listinha não fica flutuando sem o badge.
+    useEffect(() =>
+    {
+        if(remoteCount === 0) setPeopleOpen(false);
+    }, [ remoteCount ]);
+
+    useEffect(() =>
+    {
+        if(!peopleOpen) return;
+
+        const onOutside = (event: MouseEvent) =>
+        {
+            if(peopleRef.current && !peopleRef.current.contains(event.target as Node)) setPeopleOpen(false);
+        };
+
+        window.addEventListener('mousedown', onOutside);
+
+        return () => window.removeEventListener('mousedown', onOutside);
+    }, [ peopleOpen ]);
 
     useEffect(() =>
     {
@@ -171,10 +214,24 @@ export const VoiceWidgetView: FC<{}> = (props) =>
                 <div className="octane-voice-widget__assembly">
                     Modo assembleia
                 </div> }
-            { (remoteCount > 0) &&
-                <div className="octane-voice-widget__assembly" style={ { background: 'rgba(255,255,255,0.08)', borderColor: 'transparent', color: '#fff' } }>
-                    { remoteCount }
-                </div> }
+            <div className="octane-voice-widget__people" ref={ peopleRef }>
+                { (remoteCount > 0) &&
+                    <button
+                        type="button"
+                        className={ classNames('octane-voice-widget__count', peopleOpen && 'is-active') }
+                        onClick={ () => setPeopleOpen(!peopleOpen) }
+                        title="Pessoas na sala">
+                        { remoteCount }
+                    </button> }
+                { peopleOpen &&
+                    <div className="octane-voice-widget__menu octane-voice-widget__people-list">
+                        <div className="octane-voice-widget__menu-status">Pessoas na sala</div>
+                        { people.length > 0
+                            ? people.map((person) =>
+                                <div key={ person.identity } className="octane-voice-widget__person">{ person.name }</div>)
+                            : <div className="octane-voice-widget__menu-error">Ninguém além de você</div> }
+                    </div> }
+            </div>
         </div>
     );
 };

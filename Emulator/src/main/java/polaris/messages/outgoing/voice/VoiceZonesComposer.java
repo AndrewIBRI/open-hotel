@@ -10,7 +10,8 @@ import java.util.List;
 /**
  * The room's audio zones + whether the receiving user may edit them.
  * Structure: roomId, canEdit, sameFactor, otherFactor, outsideFactor (percent),
- * count, then per zone: id, name, x, y, width, height.
+ * videoGlobal, count, then per zone: id, name, x, y, width, height, mode,
+ * followed by sameFactor, otherFactor, outsideFactor only when mode == 1.
  */
 public class VoiceZonesComposer extends MessageComposer {
     private final int roomId;
@@ -49,6 +50,13 @@ public class VoiceZonesComposer extends MessageComposer {
             this.response.appendInt(zone.y());
             this.response.appendInt(zone.width());
             this.response.appendInt(zone.height());
+            this.response.appendInt(zone.factorMode());
+
+            if (zone.isCustom()) {
+                this.response.appendInt(zone.sameFactor());
+                this.response.appendInt(zone.otherFactor());
+                this.response.appendInt(zone.outsideFactor());
+            }
         }
 
         return this.response;

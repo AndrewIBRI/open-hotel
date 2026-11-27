@@ -321,3 +321,59 @@
 .octane-voice-widget__zones-button:hover {
     background: rgba(255, 255, 255, 0.12);
 }
+
+/* ---- Correção do painel de preview ----
+   .fp-panel-body é um flex em linha (pensado para um único canvas). Aqui ele
+   contém lista + ações + fatores: sem isto as colunas ficam lado a lado e o
+   botão "Apagar zona" é esticado até a altura inteira do painel. */
+.fp-panel-body.voice-zone-editor-preview-body {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    overflow: auto;
+}
+
+.fp-panel-body.voice-zone-editor-preview-body .voice-zone-editor-list {
+    flex: 0 1 auto;
+    max-height: 150px;
+}
+
+.voice-zone-editor-custom {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 0 0 auto;
+    padding: 6px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border, #333a45);
+}
+
+.voice-zone-editor-custom .voice-zone-editor-factors {
+    padding-top: 6px;
+}
+
+.voice-zone-editor-custom-tag {
+    flex: 0 0 auto;
+    font-size: 9px;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 3px;
+    background: rgba(61, 220, 132, 0.18);
+    color: #3ddc84;
+    text-transform: uppercase;
+}
+
+/* Regras gerais do card/floorplan esticam <button> filhos (width/height 100%).
+   Travamos o tamanho dos botões desta janela com especificidade alta. */
+.fp-panel .voice-zone-editor-button {
+    flex: 0 0 auto;
+    align-self: flex-start;
+    width: auto !important;
+    height: auto !important;
+    min-width: 0;
+    min-height: 0;
+    box-sizing: border-box;
+    line-height: 1.25;
+    white-space: nowrap;
+}

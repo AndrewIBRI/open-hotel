@@ -9,6 +9,15 @@ import { useVoiceStore } from '../../state/voiceStore';
  * decides who connects where. Remote mic audio is auto-attached to <audio>
  * elements so browsers play it without extra UI.
  */
+
+/**
+ * Fator preventivo para participantes cuja zona ainda não foi calculada
+ * (ex.: migração/assinatura de faixa antes do primeiro tick espacial).
+ * Nunca usar 1 aqui: isso deixaria ouvir, em volume cheio, alguém que ainda
+ * não foi enquadrado em nenhuma zona — exatamente o vazamento de som que o
+ * tick espacial corrige. O hook sobrescreve esse valor com o fator real.
+ */
+const SPATIAL_DEFAULT_FACTOR = 0.05;
 /** Maps browser getUserMedia/getDisplayMedia failures to short pt-BR hints. */
 const describeMediaError = (error: unknown): string =>
 {
@@ -292,7 +301,7 @@ class VoiceConnection
         {
             if(identity && participant.identity !== identity) continue;
 
-            const factor = this._spatialFactors.get(participant.identity) ?? 1;
+            const factor = this._spatialFactors.get(participant.identity) ?? SPATIAL_DEFAULT_FACTOR;
 
             for(const source of [ Track.Source.Microphone, Track.Source.ScreenShareAudio ])
             {
@@ -328,6 +337,44 @@ class VoiceConnection
     public refreshSpatialVolume(identity: string): void
     {
         this._applyVolume(identity);
+    }
+
+    /**
+     * Snapshot dos participantes remotos (identidade LiveKit + nome exibido).
+     * Usado pelo tick espacial para alcançar também quem não tem tile no
+     * engine, e pelo badge de contagem para listar quem está na sala.
+     */
+    public getRemoteParticipants(): { identity: string; name: string }[]
+    {
+        if(!this._room) return [];
+
+        return Array.from(this._room.remoteParticipants.values()).map((participant) => ({
+            identity: participant.identity,
+            name: participant.name
+        }));
+    }
+
+    /**
+     * Aplica em lote os fatores calculados pelo hook espacial e remove as
+     * entradas de participantes que saíram da sala. Todo participante remoto
+     * deve receber um fator: deixar de processar alguém mantinha o fator
+     * antigo (ou o default 1) e vazava som de fora da zona.
+     */
+    public applySpatialFactors(factors: Map<string, number>): void
+    {
+        const present = new Set(this.getRemoteParticipants().map((participant) => participant.identity));
+
+        for(const [identity, factor] of factors)
+        {
+            if(present.has(identity)) this.setSpatialVolume(identity, factor);
+        }
+
+        // Participantes desconectados: descarta o fator antigo para não
+        // ressuscitá-lo se a identidade voltar a aparecer na sala.
+        for(const identity of Array.from(this._spatialFactors.keys()))
+        {
+            if(!present.has(identity)) this._spatialFactors.delete(identity);
+        }
     }
 
     /** Registers/updates a video tile in the transmission window. */
