@@ -114,7 +114,10 @@
         left: 10px;
         right: 10px;
         width: auto;
-        translate: none !important;
+        /* lightningcss esta descartando `translate` no minify; neutralizar
+           via variaveis do Tailwind (nao sao tocadas). */
+        --tw-translate-x: 0px !important;
+        --tw-translate-y: 0px !important;
         transform: none !important;
     }
 
